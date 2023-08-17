@@ -16,7 +16,7 @@ export const SignupForm = () => {
     const [email, setEmail] = useState(false);
     const [password, setPassword] = useState(false);
     const [role, setRole] = React.useState('');
-    const [subjects, setSubjects] = React.useState([]);
+    const [subjects, setSubjects] = React.useState(["maths"]);
     const approved = false;
     const [Offline, setOffline] = useState(false) ;
     const [openSuccess, setOpenSuccess] = useState(false) ;
