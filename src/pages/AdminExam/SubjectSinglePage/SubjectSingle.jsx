@@ -668,7 +668,7 @@ export const SubjectSingle = () => {
                 {(showResult &&
                   <div className="resultCon">
                     <ArrowBack onClick={()=> setShowResult(false)} sx={{cursor:'pointer'}}/>
-                    <h2>20 students took your exam</h2>
+                    <h2>{results.length} students took your exam</h2>
 
                     <Paper sx={{ width: '100%', overflow: 'hidden'}}>
                     <TableContainer sx={{ maxHeight: 300}}>
