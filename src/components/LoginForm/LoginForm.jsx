@@ -43,6 +43,16 @@ export const LoginForm = ({text}) => {
       }
     }, [showNoauth]);
 
+    useEffect(() => {
+      if (error) {
+        const timer = setTimeout(() => {
+          setError(false)
+        }, 4000);
+    
+        return () => clearTimeout(timer);
+      }
+    }, [error]);
+
   const handleLogout = () => {
     // Sign out the user from Firebase
     auth.signOut()
@@ -85,7 +95,7 @@ export const LoginForm = ({text}) => {
             navigate('/selectExam')
           }else{
             if(text[0]!=='Login To Admin Portal'){
-              setMessage('Seems you are trying to login in with an admin account, navigate to admin login page');
+              setMessage('Wrong Email or password, Are you trying to Login as admin?');
               setShowNoauth(true);
             }else{
 

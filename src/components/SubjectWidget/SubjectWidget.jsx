@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from "react";
 import "./SubWidget.scss";
 
-import { Edit, Person } from "@mui/icons-material";
-import { Backdrop, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, FormControl, InputLabel, MenuItem, OutlinedInput, Select, Tooltip } from "@mui/material";
+import { Delete, Edit, Person } from "@mui/icons-material";
+import { Backdrop, Box, Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControl, InputLabel, MenuItem, OutlinedInput, Select, Tooltip } from "@mui/material";
 import AddBoxIcon from '@mui/icons-material/AddBox';
-import { collection, doc, getDocs, onSnapshot, query, setDoc, updateDoc } from "firebase/firestore";
+import { collection, doc, getDocs, onSnapshot, query, setDoc, updateDoc, deleteDoc} from "firebase/firestore";
 import { db } from "../../firebase";
 import Teachersdata from "../../TeachersData";
 
@@ -46,6 +46,7 @@ export const SubjectWidget = () => {
   
   const [selectedSubject, setSelectedSubject] = useState(null);
   const [SelectedTeacher, setSelectedTeacher] = useState('none');
+  const [openD, setOpenD] = useState(false);
     const handleEditClick = (subjectName, teacher, id) => {
     setSelectedSubject(subjectName);
     setSelectedTeacher(teacher + "-" + id)
@@ -91,6 +92,10 @@ export const SubjectWidget = () => {
       }
   }
 
+  const handleDelete = async(subname) =>{
+    await deleteDoc(doc(db, "subjects", subname));
+    setOpenD(false);
+  }
   return (
     <div className="container">
       <h1>All Subjects:</h1>
@@ -111,11 +116,20 @@ export const SubjectWidget = () => {
             className={`Rwidget ${selectedSubject === subject.name ? "due" : ""}`}
             
           >
-            <Tooltip title="Edit" arrow>
-            <div className="edit" onClick={() => handleEditClick(subject.name, subject.teacher, subject.teacherID)}>
-              <Edit className="editicon"/>
+            <div className="toolsicons">
+
+              <Tooltip title="Edit" arrow>
+              <div className="edit" onClick={() => handleEditClick(subject.name, subject.teacher, subject.teacherID)}>
+                <Edit className="editicon"/>
+              </div>
+              </Tooltip>
+
+              <Tooltip title="Delete" arrow>
+              <div className="edit" onClick={() => setOpenD(subject.name)}>
+                <Delete className="editicon"/>
+              </div>
+              </Tooltip>
             </div>
-            </Tooltip>
             <div className="Title">
               <h2>{subject.name}</h2>
             </div>
@@ -166,6 +180,27 @@ export const SubjectWidget = () => {
               </Dialog>
             )}
             
+            <Dialog
+            open={Boolean(openD === subject.name)}
+            onClose={()=> setOpenD(false)}
+            aria-labelledby="alert-dialog-title"
+            aria-describedby="alert-dialog-description"
+             >
+                <DialogTitle id="alert-dialog-title">
+                  Are you sure you want to delete {subject.name}
+                </DialogTitle>
+                <DialogContent>
+                  <DialogContentText id="alert-dialog-description">
+                    Deleting this subject cannot be undone and exams related to this subjects might be lost
+                  </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                  <Button onClick={()=> setOpenD(false)}>Cancel</Button>
+                  <Button onClick={()=> handleDelete(subject.name)} autoFocus>
+                    Confirm 
+                  </Button>
+                </DialogActions>
+            </Dialog>
           </div>
         ))}
       </div>
