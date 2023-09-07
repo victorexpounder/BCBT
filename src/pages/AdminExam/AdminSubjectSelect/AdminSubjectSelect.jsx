@@ -8,7 +8,7 @@ import { Link } from 'react-router-dom';
 import { WidgetTemp } from '../../../components/ExamsWidget/ExamsWidget';
 import { TeacherSubject } from '../../../TeacherSubject';
 import { UserContext } from '../../../contex/UserContext';
-import { collection, doc, getDoc, getDocs, onSnapshot, query } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, onSnapshot, query, where } from 'firebase/firestore';
 import { db } from '../../../firebase';
 
 
@@ -30,6 +30,7 @@ export const AdminSubjectSelect = () => {
   const [open, setOpen] = useState(false);
     const handleClose = () => {
         setOpen(false);
+        
     };
     const handleOpen = () => {
         setOpen(true);
@@ -37,8 +38,15 @@ export const AdminSubjectSelect = () => {
 
     // const [subjects, setSubjects] = useState([]);
     const subjects = TeacherSubject();
+
     const [subjectList, setSubjectList] = useState([
       ''
+    ]);
+    const [hodsubjectList, setHodSubjectList] = useState([
+      ''
+    ]);
+    const [hodDepartments, setHodDepartments] = useState([
+     
     ]);
   
     // const fetchSubjects = async () => {
@@ -58,6 +66,10 @@ export const AdminSubjectSelect = () => {
       });
       setSubjectList(subjectsData);
     });
+
+    
+
+
   
     useEffect(() => {
   
@@ -65,6 +77,22 @@ export const AdminSubjectSelect = () => {
         unsubscribeSubjectsD(); // Clean up the listener when the component unmounts
       };
     }, []);
+
+    useEffect(()=>{
+      const departmentsRef = collection(db, "departments");
+      const q = query(departmentsRef, where("hodId", "==", currentUser.uid));
+
+      // Set up a real-time listener using onSnapshot
+      const unsubscribe = onSnapshot(q, (querySnapshot) => {
+        const updateddepartments = [];
+        querySnapshot.forEach((doc) => {
+          updateddepartments.push(doc.id);
+        });
+
+        setHodDepartments(updateddepartments);
+        console.log(updateddepartments);
+      });
+    },[])
 
     const [userData, setUserData] = useState();
     const { currentUser } = useContext(UserContext);
