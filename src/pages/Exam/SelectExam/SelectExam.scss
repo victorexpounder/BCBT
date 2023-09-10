@@ -3,12 +3,13 @@
     height: 100vh;
     display: flex;
     flex-direction: column;
-    .navBar{
+    .navBarselectexam{
         box-sizing: border-box;
         display: flex;
         justify-content: space-between;
         padding: 0.5rem 1rem 0.5rem 1rem;
         flex: 1;
+        
         @media (min-width: 800px) {
             padding: 0.5rem 6rem 0.5rem 6rem;
         }

@@ -37,7 +37,12 @@ export const AdminSubjectSelect = () => {
     };
 
     // const [subjects, setSubjects] = useState([]);
-    const subjects = TeacherSubject();
+    const teacherSubjects = TeacherSubject();
+
+
+    const [subjects, setSubjects] = useState([
+      ''
+    ]);
 
     const [subjectList, setSubjectList] = useState([
       ''
@@ -45,9 +50,7 @@ export const AdminSubjectSelect = () => {
     const [hodsubjectList, setHodSubjectList] = useState([
       ''
     ]);
-    const [hodDepartments, setHodDepartments] = useState([
-     
-    ]);
+    const [hodDepartments, setHodDepartments] = useState();
   
     // const fetchSubjects = async () => {
     //   try {
@@ -78,7 +81,8 @@ export const AdminSubjectSelect = () => {
       };
     }, []);
 
-    useEffect(()=>{
+
+    const fetchDepartments = () =>{
       const departmentsRef = collection(db, "departments");
       const q = query(departmentsRef, where("hodId", "==", currentUser.uid));
 
@@ -92,7 +96,52 @@ export const AdminSubjectSelect = () => {
         setHodDepartments(updateddepartments);
         console.log(updateddepartments);
       });
-    },[])
+
+      return unsubscribe;
+      
+    }
+
+    useEffect(() => {
+      const unsubscribe = fetchDepartments(); // Call fetchDepartments directly
+      return () => {
+        unsubscribe(); // Clean up the listener when the component unmounts
+      };
+    }, []);
+
+    const fetchHodSubjects = async() =>{
+      if(hodDepartments)
+      {
+        const hodSubRef = collection(db, "subjects");
+        const q = query(hodSubRef, where("department", "in", hodDepartments));
+        
+        // Set up a real-time listener using onSnapshot
+          const querySnapshot = await getDocs(q);
+          const HodSubs = [];
+          const HodSubsAll = [];
+
+          querySnapshot.forEach((doc) => {
+            const notEqual = teacherSubjects.every(item => item !== doc.id);
+            HodSubsAll.push(doc.id);
+            if(notEqual)
+            {
+              HodSubs.push(doc.id);
+            }
+          
+          const updatedSubjectList = [...teacherSubjects, ...HodSubs];
+          setSubjects(updatedSubjectList);
+          localStorage.setItem('hodSubjects', JSON.stringify(HodSubsAll))
+          console.log(updatedSubjectList);
+        });
+
+    }
+  }
+    useEffect(()=>{
+    
+    fetchHodSubjects(); 
+
+    },[hodDepartments]) 
+
+    
 
     const [userData, setUserData] = useState();
     const { currentUser } = useContext(UserContext);
@@ -127,7 +176,7 @@ export const AdminSubjectSelect = () => {
           </div>
           {userData?.role === "Director"?
 
-            <div className="widget-container">
+            <div className="widget-container" style={{height: '70vh', overflowY: 'auto'}}>
             {subjectList.map((subject) =>(
               <Link to={'/exams/class/term/subjects/subjectpage'} style={{textDecoration: 'none'}}>
                   <div className="wi" onClick={() => handleStore(subject)}>
