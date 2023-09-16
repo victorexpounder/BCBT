@@ -40,7 +40,7 @@ export const AdminSubjectSelect = () => {
     const teacherSubjects = TeacherSubject();
 
 
-    const [subjects, setSubjects] = useState(TeacherSubject());
+    const [subjects, setSubjects] = useState(['Loading...']);
 
     const [subjectList, setSubjectList] = useState([
       ''
@@ -107,7 +107,7 @@ export const AdminSubjectSelect = () => {
     }, []);
 
     const fetchHodSubjects = async() =>{
-      if(hodDepartments)
+      if(hodDepartments.length > 0)
       {
         const hodSubRef = collection(db, "subjects");
         const q = query(hodSubRef, where("department", "in", hodDepartments));
@@ -131,6 +131,8 @@ export const AdminSubjectSelect = () => {
           console.log(updatedSubjectList);
         });
 
+    }else{
+        setSubjects(teacherSubjects);
     }
   }
     useEffect(()=>{
