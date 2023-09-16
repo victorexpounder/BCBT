@@ -40,9 +40,7 @@ export const AdminSubjectSelect = () => {
     const teacherSubjects = TeacherSubject();
 
 
-    const [subjects, setSubjects] = useState([
-      ''
-    ]);
+    const [subjects, setSubjects] = useState(teacherSubjects);
 
     const [subjectList, setSubjectList] = useState([
       ''
