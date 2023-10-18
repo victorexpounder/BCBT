@@ -1,17 +1,18 @@
 //code
-import React, { useContext, useEffect, useState } from 'react'
+import React, { useContext, useEffect, useRef, useState } from 'react'
 import { SideBar } from '../../../components/SideBar/SideBar'
 import { Alert, Backdrop, Box, Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Fab, FormControl, Input, InputLabel, MenuItem, Paper, Select, Slide, Snackbar, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Tooltip} from '@mui/material'
-import { ArrowBack, Article, DeleteForever, Edit, Label, Menu, Padding, Public, PublicOff, Publish, Save, Unpublished } from "@mui/icons-material";
+import { ArrowBack, Article, DeleteForever, Edit, Label, Menu, Padding, Public, PublicOff, Publish, Save, Settings, Unpublished } from "@mui/icons-material";
 import { NavBar } from '../../../components/NavBar/NavBar'
 import { AccountCard } from '../../../components/AccountCard/AccountCard'
 import AddBoxIcon from '@mui/icons-material/AddBox';
 import './SubjectSingle.scss'
-import { db } from '../../../firebase';
+import { db, storage } from '../../../firebase';
 import { collection, deleteDoc, doc, getDocs, onSnapshot, query, setDoc, updateDoc, where } from 'firebase/firestore';
 import { Exams } from '../../../Exams';
 import { UserContext } from '../../../contex/UserContext';
 import ChecklistIcon from '@mui/icons-material/Checklist';
+import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 
 
 export const SubjectSingle = () => {
@@ -27,7 +28,7 @@ export const SubjectSingle = () => {
   const [loading, setLoading] = useState(false);
   const [approveSuccess, setApproveSuccess] = useState(false);
   const [notApprovedMsg, setNotApprovedMsg] = useState(false);
-
+  const fileInputRef = useRef(null);
   const { currentUser } = useContext(UserContext);
 
   // const examsList = Exams(null, year,term,grade,subject);
@@ -157,6 +158,7 @@ export const SubjectSingle = () => {
   const [deleteExam, setDeleteExam] = useState(null);
   const [showDeleteDialouge, setShowDeleteDialouge] = useState(false);
   const [showAddDialouge, setShowAddDialouge] = useState(false);
+  const [showSettingsDialouge, setShowSettingsDialouge] = useState(false);
   const [examName, setExamName] = useState(null);
   const [examNameError, setExamNameError] = useState(false);
   const [value, setValue] = useState();
@@ -201,11 +203,27 @@ export const SubjectSingle = () => {
   }
   );
 
+  const [qImg, setQImg] = useState(() =>{
+    const initialArray = [];
+    for (let i = 0; i < selectedExam.questions.length; i++) {
+      initialArray.push(
+        selectedExam.questions[i].img,
+       )
+    }
+    return initialArray;
+  }
+  );
+
+  const [imgName, setImgName] = useState([]);
+
  //using useEffect to redeclare the two dimensional array ans setting it to setOpselect each time selectedExam changes
   useEffect(() => {
     const initialArray = [];
     const initialArrayValue = [];
     const initialArrayQuestion = [];
+    const initialArrayImg = [];
+    const initialArrayImgUrl = [];
+    const initialArrayImgName = [];
 
     for (let i = 0; i < selectedExam.questions.length; i++) {
       initialArray.push([
@@ -226,10 +244,21 @@ export const SubjectSingle = () => {
         selectedExam.questions[i].question
       )
 
+      
+
+      initialArrayImgName.push(
+        selectedExam.questions[i].img
+      )
+
+      initialArrayImgUrl.push(
+        selectedExam.questions[i].imgUrl
+      )
+
     }
     setOpselectValue(initialArray);
     setOpValue(initialArrayValue);
     setQvalue(initialArrayQuestion);
+    setImgName(initialArrayImgName)
   }, [selectedExam]);
 
 
@@ -261,6 +290,7 @@ export const SubjectSingle = () => {
     const handleOpen = () => {
         setOpen(true);
     };
+    // adding exam
     const handleAddExam = () =>{
       if (examName) {
         setqnoerr(false)
@@ -287,6 +317,8 @@ export const SubjectSingle = () => {
             newExam.questions.push(
               {
                 question : '',
+                img: '',
+                imgUrl: '',
                 options : [
                   {optionText: '', isCorrect: false},
                   {optionText: '', isCorrect: false},
@@ -305,6 +337,57 @@ export const SubjectSingle = () => {
           setqnoerr(true)
         }
       }
+         
+    }
+
+     // editing exam
+     const handleEditExam = async() =>{
+      
+        if(value > 0)
+        {
+          const newExam = {
+            questionNo : value,
+            duration : duration,
+            questions : [
+              ...selectedExam.questions
+            ]
+          };
+
+          const remainingQuestions = newExam.questionNo - selectedExam.questionNo;
+          if(remainingQuestions > 0)
+          {
+            for(let i = 0; i < remainingQuestions; i++)
+            {
+              newExam.questions.push(
+                {
+                  question : '',
+                  img: '',
+                  imgUrl: '',
+                  options : [
+                    {optionText: '', isCorrect: false},
+                    {optionText: '', isCorrect: false},
+                    {optionText: '', isCorrect: false},
+                    {optionText: '', isCorrect: false}
+                  ]
+                }
+                )
+              }
+          }else{
+            for(let i = 0; i > remainingQuestions; i--)
+            {
+              newExam.questions.pop()
+            }
+          }
+          
+          const userDocRef = doc(db, 'exams', year+term+grade+subject+ selectedExam.name);
+          await updateDoc(userDocRef, newExam); 
+          setShowSettingsDialouge(false);
+          alert("exam edited successfully!");
+          
+        }else{
+         
+          setqnoerr(true)
+        }
       
          
     }
@@ -467,6 +550,15 @@ export const SubjectSingle = () => {
       }
     }
 
+    const handleQuestionImgChange = (event) =>{
+      const file = event.target.files[0] || '';
+      const updatedArray = [...qImg];
+      const updatedNameArray = [...imgName];
+      updatedArray[qIndex] = file;
+      updatedNameArray[qIndex] = file.name;
+      setQImg(updatedArray);
+      setImgName(updatedNameArray);
+    }
 
     var handleNP = (operation) =>{
       if (operation === 'next') {
@@ -481,6 +573,23 @@ export const SubjectSingle = () => {
         } 
         
     }
+
+    document.onkeydown = function(e) {
+      switch (e.keyCode) {
+          case 37:
+              handleNP('previous')
+              break;
+          case 38:
+             
+              break;
+          case 39:
+              handleNP('next')
+              break;
+          case 40:
+              
+              break;
+      }
+  };
 
    const handleExamSelect = () =>{
       setExamOpen(true)
@@ -504,9 +613,24 @@ export const SubjectSingle = () => {
       // Get a shallow copy of the questions array to modify it before updating in Firestore
       const updatedQuestions = [...selectedExam.questions];
       const selectedQuestion = updatedQuestions[questionIndex];
+      let imgURL = '';
+      if(qImg[questionIndex])
+        {
+          const storageRef = ref(storage, `${year + term + grade + subject + selectedExam.name}/img${questionIndex}`);
+          uploadBytes(storageRef, qImg[questionIndex])
+          .then(() => getDownloadURL(storageRef))
+          .then((downloadURL) => {
+            alert(qImg[questionIndex].name)
+            imgURL = downloadURL;
+            selectedQuestion.imgUrl = downloadURL;
+            selectedQuestion.img = qImg[questionIndex].name;
+          })
+        }
 
       // Update the question details with the new data
       selectedQuestion.question = qValue[questionIndex];
+      
+
 
       // Update options for the selected question
       for (let i = 0; i < 4; i++) {
@@ -523,11 +647,16 @@ export const SubjectSingle = () => {
     }
   };
 
+  
+
+  
+
    const handleSave = async () => {
     setSaveLoading(true);
     try {
       // Loop through each question and update its details in Firestore
       for (let i = 0; i < selectedExam.questions.length; i++) {
+       
         await updateQuestionInFirestore(i);
       }
 
@@ -605,7 +734,7 @@ export const SubjectSingle = () => {
                         </Tooltip>
 
                         <Tooltip title="Delete">
-                        <Fab color="secondary" aria-label="edit" size='small'>
+                        <Fab color="error" aria-label="edit" size='small'>
                         <DeleteForever onClick={() => {setDeleteExam(exam); setShowDeleteDialouge(true)}}/>
                         </Fab>
                         </Tooltip>
@@ -631,6 +760,12 @@ export const SubjectSingle = () => {
                         <Tooltip title="Results">
                           <Fab color="primary" aria-label="edit" size='small'>
                           <Article onClick={() =>{fetchResults(exam); setShowResult(true)}}/>
+                          </Fab>
+                        </Tooltip>
+
+                        <Tooltip title="Settings">
+                          <Fab  aria-label="edit" size='small'>
+                          <Settings onClick={() =>{setShowSettingsDialouge(true)}}/>
                           </Fab>
                         </Tooltip>
 
@@ -701,7 +836,22 @@ export const SubjectSingle = () => {
                         onChange={handlequestionChange}
                         
                       />
+
                       </div>
+                      <div className="uploadImg">
+                        <input 
+                        type="file" 
+                        accept="image/*"
+                        onChange={handleQuestionImgChange}
+                        ref={fileInputRef}
+                        style={{display: "none"}}
+                        />
+
+                        <Button onClick={()=> fileInputRef.current.click()}>Upload Image</Button>
+                        <p> {imgName[qIndex]} </p>
+
+                      </div>
+                       
 
                         {/* options section */}
 
@@ -874,6 +1024,63 @@ export const SubjectSingle = () => {
           <Button onClick={handleDialouge}>Cancel</Button>
           <Tooltip title="Clicking ok will add an exam draft where you can upload questions and publish" arrow>
           <Button onClick={handleAddExam}>Ok</Button>
+          </Tooltip>
+        </DialogActions>
+      </Dialog>
+      )}
+
+      {/* Edit exam dialogue box */}
+
+      {showSettingsDialouge && (
+        <Dialog disableEscapeKeyDown open={Boolean(showSettingsDialouge)} onClose={()=> setShowSettingsDialouge(false)}>
+        <DialogTitle>Edit {selectedExam.name}</DialogTitle>
+        <DialogContent>
+          <Box component="form" sx={{ display: 'flex', flexWrap: 'wrap', flexDirection: 'column', gap: '1.5rem'}}>
+            
+
+            <FormControl sx={{ m: 1, minWidth: 200 }}>
+            <InputLabel id="qnumber">Number of questions</InputLabel>
+            <Input
+            value={value}
+            defaultValue={selectedExam.questionNo}
+            error={qnoerr}
+            id='qnumber'
+            onChange={handleQnoInputChange}
+            onBlur={handleBlur}
+            
+            
+            inputProps={{
+              step: 5,
+              min: 0,
+              max: 100,
+              type: 'number',
+              'aria-labelledby': 'input-slider',
+            }}
+          />
+
+            {(qnoerr && 
+              <p>Amount of question should be 1 - 100</p>
+              )}
+            </FormControl>
+
+              <label htmlFor="select">Enter duration</label>
+            <select value={duration} defaultValue={selectedExam.duration} name='select' style={{padding: 10, border: 'none',  borderBottom: '1px solid #888'}} onChange={(e)=> setDuration(e.target.value)}>
+              <option value={1800}>30 mins</option>
+              <option value={3600}>1 hr</option>
+              <option value={5400}>1hr 30mins</option>
+              <option value={7200}>2hrs </option>
+              <option value={9000}>2hrs 30mins</option>
+              <option value={10800}>3hrs </option>
+              <option value={12600}>3hrs 30mins</option>
+              <option value={14400}>4hrs </option>
+            </select>
+
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={()=> setShowSettingsDialouge(false)}>Cancel</Button>
+          <Tooltip title="Clicking ok will add an exam draft where you can upload questions and publish" arrow>
+          <Button onClick={handleEditExam}>Ok ooo</Button>
           </Tooltip>
         </DialogActions>
       </Dialog>
