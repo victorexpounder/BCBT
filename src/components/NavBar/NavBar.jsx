@@ -1,11 +1,12 @@
-import { AccountCircle, DarkModeOutlined, LanguageOutlined, Mail, MailOutline, Notifications, NotificationsOutlined, SearchOutlined } from '@mui/icons-material'
+import { AccountCircle, DarkModeOutlined, LanguageOutlined, Mail, MailOutline, Notifications, NotificationsOutlined, Password, SearchOutlined } from '@mui/icons-material'
 import './NavBar.scss'
-import { Accordion, Avatar, Badge, Icon, Tooltip } from '@mui/material';
+import { Accordion, Avatar, Badge, Icon, Snackbar, Tooltip } from '@mui/material';
 import Paper from '@mui/material/Paper';
 import { useContext, useEffect, useState } from 'react';
 import { UserContext } from '../../contex/UserContext';
 import { doc, getDoc, onSnapshot } from 'firebase/firestore';
-import { db } from '../../firebase';
+import { auth, db } from '../../firebase';
+import { sendPasswordResetEmail } from 'firebase/auth';
 
 
 
@@ -13,6 +14,8 @@ export const NavBar = ({handleOpen}) => {
 
   
     const [open, setOpen] = useState(false);
+    const [success, setSuccess] = useState(false);
+    const [failed, setFailed] = useState(false);
   
     const handleClick = () => {
       setOpen(!open);
@@ -34,6 +37,22 @@ export const NavBar = ({handleOpen}) => {
       };
     }, [currentUser.uid]);
   
+    const handlePasswordReset = async (email) => {
+      try {
+        
+        await sendPasswordResetEmail(auth, email);
+       
+        setSuccess(true);
+        console.log('Password reset email sent successfully.');
+        // Display a message to the user indicating that the password reset email has been sent.
+      } catch (error) {
+       
+        setFailed(true);
+        console.error('Error sending password reset email:', error.message);
+        alert(error);
+        // Display an error message to the user.
+      }
+    };
   
 
   return (
@@ -55,6 +74,16 @@ export const NavBar = ({handleOpen}) => {
             <DarkModeOutlined className='icon'/>
           </div>
           </Tooltip>
+          {userData?.role === "Director"?
+            <Tooltip title="send password reset" arrow>
+            <div className="item" onClick={()=> handlePasswordReset("blessedwinvicschools@gmail.com")}>
+              <Password className='icon'/>
+            </div>
+            </Tooltip>
+            :
+            ''
+          }
+
           <Tooltip title="Profile" arrow>
           <div className="item" onClick={()=>handleOpen()}>
             
@@ -75,7 +104,21 @@ export const NavBar = ({handleOpen}) => {
       )}
 
 
+    <Snackbar
+      open={success}
+      autoHideDuration={6000}
+      onClose={()=> setSuccess(false)}
+      message="Email sent"
       
+    />
+
+    <Snackbar
+      open={failed}
+      autoHideDuration={6000}
+      onClose={()=> setFailed(false)}
+      message="Email was not sent try again"
+      
+    />
     </div>
   )
 }

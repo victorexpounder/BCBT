@@ -90,7 +90,7 @@ export const LoginForm = ({text}) => {
         const getUserDoc = async () => await getDoc(userDocRef);
         
         getUserDoc().then((userDoc) => {
-          if(!userDoc.exists())
+          if(!userDoc.exists() && (userDoc.email === "blessedwinvicschools@gmail.com" || "examadmin@blessed.sch"))
           {
             navigate('/selectExam')
           }else{

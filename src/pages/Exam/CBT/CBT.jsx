@@ -211,6 +211,11 @@ const CBTComponent = () => {
         <div className="question-container">
           <h2 className='questionCount'>{currentQuestion + 1}/{questions?.length}</h2>
           <h1 className="question">{questions[currentQuestion]?.question}</h1>
+          {questions[currentQuestion]?.imgUrl?
+            <img src={questions[currentQuestion]?.imgUrl} alt="" />
+            :
+            ''
+          }
           <ul className="options">
             {questions[currentQuestion]?.options.map((option, index) => (
               <li

@@ -620,7 +620,7 @@ export const SubjectSingle = () => {
           uploadBytes(storageRef, qImg[questionIndex])
           .then(() => getDownloadURL(storageRef))
           .then((downloadURL) => {
-            alert(qImg[questionIndex].name)
+            
             imgURL = downloadURL;
             selectedQuestion.imgUrl = downloadURL;
             selectedQuestion.img = qImg[questionIndex].name;
