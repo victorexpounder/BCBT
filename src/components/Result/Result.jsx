@@ -30,6 +30,8 @@ const ResultComponent = ({ totalQuestions, selectedans, totalmarks, mark, subjec
          await setDoc(examsDocRef, { correctCount, wrongCount, score : calculateScore(), totalmarks,timestamp: serverTimestamp()},);
         setUploading(false);
         setUploaded(true);
+        localStorage.removeItem("exam");
+        localStorage.removeItem("examProgress");
       }catch(error){
         setUploading(false);
         setUploadFailled(true);
@@ -38,6 +40,7 @@ const ResultComponent = ({ totalQuestions, selectedans, totalmarks, mark, subjec
     }
 
     useEffect(()=>{
+      localStorage.removeItem("examProgress");
       uploadResult();
     }, [])
 
@@ -63,7 +66,7 @@ const ResultComponent = ({ totalQuestions, selectedans, totalmarks, mark, subjec
         <p>
           Correct Answers: {correctCount} / {totalQuestions}
         </p>
-        <p>Wrong Answers: {wrongCount} / {totalQuestions}</p>
+        <p>Wrong Answers: {totalQuestions - correctCount} / {totalQuestions}</p>
         <p>Score: {marksGained} / {totalmarks}</p>
       </div>
 

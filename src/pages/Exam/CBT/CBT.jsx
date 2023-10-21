@@ -8,6 +8,7 @@ import ResultComponent from '../../../components/Result/Result';
 import { useEffect } from 'react';
 import { collection, doc, getDoc } from 'firebase/firestore';
 import { db } from '../../../firebase';
+import { Avatar } from '@mui/material';
 
 const CBTComponent = () => {
     const [currentQuestion, setCurrentQuestion] = useState(0);
@@ -22,7 +23,8 @@ const CBTComponent = () => {
      
     ]);
 
-    const examID = JSON.parse(localStorage.getItem("exam"));
+    const[examID, setExamID] = useState(JSON.parse(localStorage.getItem("exam")));
+    const [progressLoaded, setProgressLoaded] = useState();
     const fetchExams = async() =>{
       try{
         const examsRef = doc(db, "exams", examID);
@@ -30,11 +32,14 @@ const CBTComponent = () => {
         const data = examDoc.data();
         
         setExam(data);
-        // Shuffle the order of questions
-        const shuffledQuestions = shuffleArray(data.questions);
-        setQuestions(shuffledQuestions);
-
-        console.log(shuffledQuestions);
+        if(!progressLoaded)
+        {
+          // Shuffle the order of questions
+          const shuffledQuestions = shuffleArray(data.questions);
+          setQuestions(shuffledQuestions);
+  
+          console.log(shuffledQuestions);
+        }
         
       }catch(error){
         console.log(error);
@@ -55,7 +60,7 @@ const CBTComponent = () => {
     useEffect(()=>{
       fetchExams();
       fetchDuration();
-    },[])
+    },[examID])
 
     function shuffleArray(array) {
       const shuffledArray = [...array];
@@ -67,7 +72,7 @@ const CBTComponent = () => {
     }
     
 
-    const studentName = JSON.parse(localStorage.getItem("studentName"));
+    let [studentName, setStudentName] = useState(JSON.parse(localStorage.getItem("studentName")));
     const [selectedOptions, setSelectedOptions] = useState(Array(questions?.length).fill(null)); // Array to keep track of selected options for each question
     const [showCalculator, setShowCalculator] = useState(false);
     const [showResult, setShowResult] = useState(false);
@@ -88,6 +93,7 @@ const CBTComponent = () => {
   
     const handleNextQuestion = () => {
       if (currentQuestion < questions.length - 1){
+          saveProgress(); 
           setCurrentQuestion(currentQuestion + 1);
       }
       
@@ -95,6 +101,7 @@ const CBTComponent = () => {
   
     const handlePreviousQuestion = () => {
       if (currentQuestion > 0) {
+        saveProgress(); 
         setCurrentQuestion(currentQuestion - 1);
       }
     };
@@ -126,6 +133,10 @@ const CBTComponent = () => {
         if (timeElapsed >= allocatedTime) {
           handleSubmit();
           clearInterval(timer);
+        }
+        if(!showResult)
+        {
+          saveProgress();
         }
       };
   
@@ -165,7 +176,7 @@ const CBTComponent = () => {
 
         const handleTabVisibilityChange = () => {
           if (document.hidden) {
-            handleSubmit();
+            
             // Perform actions when the user leaves the tab
           } else {
             console.log("User returned to the tab");
@@ -179,6 +190,44 @@ const CBTComponent = () => {
           return () => {
             document.removeEventListener("visibilitychange", handleTabVisibilityChange);
           };
+        }, []);
+
+        // Function to save the current state to localStorage
+        const saveProgress = () => {
+          const progressData = {
+            currentQuestion,
+            selectedOptions,
+            SelectedAnswers,
+            studentName,
+            timeElapsed,
+            examID,
+            questions,
+          };
+          localStorage.setItem("examProgress", JSON.stringify(progressData));
+        };
+
+        // Function to load saved progress from localStorage
+
+        const loadProgress = () => {
+          const savedProgress = localStorage.getItem("examProgress");
+          if (savedProgress) {
+            const progressData = JSON.parse(savedProgress);
+            setCurrentQuestion(progressData.currentQuestion);
+            setSelectedOptions(progressData.selectedOptions);
+            setSelectedAnswers(progressData.SelectedAnswers);
+            setTimeElapsed(progressData.timeElapsed);
+            setExamID(progressData.examID);
+            setStudentName(progressData.studentName);
+            setProgressLoaded(true);
+            setQuestions(progressData.questions)
+          }
+        };
+
+        useEffect(() => {
+          // Load saved progress when the component mounts
+          loadProgress();
+
+          
         }, []);
   
     return (
@@ -196,6 +245,10 @@ const CBTComponent = () => {
         </div>
 
               <div className="calculator-button-container">
+                <div className="profile">
+                <Avatar> {studentName?.charAt(0)} </Avatar>
+                <p> {studentName} </p>
+                </div>
               <button className="calculator-button" onClick={handleCalculatorToggle}>
               <CalculateIcon fontSize='large'/>
               </button>
@@ -210,12 +263,12 @@ const CBTComponent = () => {
           <h1 className='heading'>{exam?.term} Term {exam?.subject} Examination {exam?.session}</h1>
         <div className="question-container">
           <h2 className='questionCount'>{currentQuestion + 1}/{questions?.length}</h2>
-          <h1 className="question">{questions[currentQuestion]?.question}</h1>
           {questions[currentQuestion]?.imgUrl?
             <img src={questions[currentQuestion]?.imgUrl} alt="" />
             :
             ''
           }
+          <h1 className="question">{questions[currentQuestion]?.question}</h1>
           <ul className="options">
             {questions[currentQuestion]?.options.map((option, index) => (
               <li
@@ -236,6 +289,11 @@ const CBTComponent = () => {
             </button>
           </div>
 
+        </div>
+        <div className="questionBoxCon">
+              {questions.map((question, index)=>(
+              <div className={`questionNumber ${selectedOptions[index]? "answered": ""}`} onClick={()=> setCurrentQuestion(index)}>{index+1}</div>
+              ))}
         </div>
         <div className="timer">
         {/* Display remaining time */}

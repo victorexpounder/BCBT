@@ -136,7 +136,18 @@ export const SelectExam = () => {
         }
       }
       
-      
+      const [progress, setProgress] = useState(false);
+
+      const loadProgress = () => {
+        const savedProgress = localStorage.getItem("examProgress");
+        if (savedProgress) {
+          setProgress(true);
+        }
+      };
+
+      useEffect(()=>{
+        loadProgress();
+      }, [])
 
   return (
     <div className='selectView'>
@@ -201,6 +212,11 @@ export const SelectExam = () => {
             <div className="proceedButton" onClick={handleSubmit}>
                 Proceed
             </div>
+            {progress?
+                <a href="/cbt">You have saved exam, continue?</a>
+                :
+                ""
+            }
         </div>
     </div>
   )
