@@ -176,7 +176,7 @@ const CBTComponent = () => {
 
         const handleTabVisibilityChange = () => {
           if (document.hidden) {
-            
+             handleSubmit();
             // Perform actions when the user leaves the tab
           } else {
             console.log("User returned to the tab");
